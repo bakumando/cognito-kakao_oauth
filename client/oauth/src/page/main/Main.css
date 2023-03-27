@@ -1,0 +1,46 @@
+/* 폰트 설정 */
+@import url("https://fonts.googleapis.com/css?family=Montserrat&display=swap");
+
+/* 전체 body에 폰트 적용 */
+body {
+  font-family: "Montserrat", sans-serif;
+  margin: 0;
+}
+
+/* 메인 페이지 wrapper */
+.main-wrapper {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(to right, #4c77b6, #6497cc);
+  color: #fff;
+}
+
+.main-wrapper h1 {
+  font-size: 4rem;
+  margin-bottom: 2rem;
+}
+
+.main-wrapper p {
+  font-size: 1.5rem;
+  margin-bottom: 4rem;
+}
+
+/* 로그아웃 버튼 */
+.logout-btn {
+  padding: 1rem;
+  font-size: 1.2rem;
+  background-color: #fff;
+  color: #4c77b6;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.logout-btn:hover {
+  background-color: #f5f5f5;
+}
