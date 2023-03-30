@@ -1,3 +1,3 @@
 package com.htbeyond.request
 
-class CognitoRefreshTokenRequest(val appClientId: String, val refresh_token: String)
+class RefreshTokenRequest(val blueId: String, val refresh_token: String)
