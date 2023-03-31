@@ -1,16 +1,21 @@
 package com.htbeyond.service
 
 import com.auth0.jwt.JWT
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.convertValue
 import com.htbeyond.cognito.Player
 import com.htbeyond.enums.Gender
 import com.htbeyond.model.Member
 import com.htbeyond.repository.MemberRepository
 import com.htbeyond.request.RefreshTokenRequest
+import com.htbeyond.request.UpdateMemberRequest
 import com.htbeyond.response.GetTokenResponse
 import com.htbeyond.response.KakaoLoginResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.request.forms.FormDataContent
 import io.ktor.client.request.post
+import io.ktor.features.BadRequestException
 import io.ktor.http.Parameters
 import java.nio.charset.StandardCharsets
 import java.util.Base64
@@ -20,6 +25,7 @@ import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeType
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthFlowType
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthenticationResultType
 
@@ -29,7 +35,8 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.Authenticat
 class AuthService(
     private val httpClient: HttpClient,
     private val memberRepository: MemberRepository,
-    private val cognitoIdentityProviderClient: CognitoIdentityProviderClient
+    private val cognitoIdentityProviderClient: CognitoIdentityProviderClient,
+    private val objectMapper: ObjectMapper
 ) {
 
     companion object {
@@ -37,7 +44,8 @@ class AuthService(
         const val CLIENT_SECRET = "1099lhrbvh15n9o9mkjlosd8inm4h7lu68hr26uupda3iqg74mll"
         const val REDIRECT_URI = "http://localhost:8080/oauth/kakao"
         const val GRANT_TYPE = "authorization_code"
-        const val SCOPE = "openid"
+        const val SCOPE = "openid email phone profile"
+        const val USER_POOL_ID = "ap-northeast-2_KLTUxQRT1"
     }
 
     fun kakaoLogin(code: String): KakaoLoginResponse {
@@ -97,10 +105,6 @@ class AuthService(
                 )
         }
 
-    fun getUser(username: String): Member? {
-        return memberRepository.findByBlueId(username)
-    }
-
     fun calculateSecretHash(usernaame: String): String? {
         val HMAC_SHA256_ALGORITHM = "HmacSHA256"
         val signingKey = SecretKeySpec(
@@ -116,5 +120,38 @@ class AuthService(
         } catch (e: Exception) {
             throw RuntimeException("Error while calculating ")
         }
+    }
+
+    fun updateMember(blueId: String, accessToken: String, request: UpdateMemberRequest): Member {
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL)
+
+        val attributes: Map<String, String> = objectMapper.convertValue(request)
+
+        // 요걸로 성공을 해야함
+//        val updateUserAttributes = cognitoIdentityProviderClient.updateUserAttributes {
+//            it.accessToken(accessToken)
+//                .userAttributes(
+//                attributes.map { attribute ->
+//                    AttributeType.builder().name(attribute.key).value(attribute.value).build()
+//                }
+//            )
+//        }
+
+        cognitoIdentityProviderClient.adminUpdateUserAttributes {
+            it.userPoolId(USER_POOL_ID).username(blueId).userAttributes(
+                attributes.map { attributes ->
+                    AttributeType.builder().name(attributes.key).value(attributes.value).build()
+                }
+            )
+        }
+
+        val findMember = memberRepository.findByBlueId(blueId)
+        findMember?.apply {
+            name = request.name
+            phone_number = request.phone_number
+            birthdate = request.birthdate
+        } ?: throw BadRequestException("존재하지 않는 유저")
+
+        return memberRepository.save(findMember)
     }
 }

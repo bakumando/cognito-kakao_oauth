@@ -47,6 +47,24 @@ function Main() {
     console.log(result);
   };
 
+  // 유저 추가 프로필 업데이트 테스트 용
+  const updateMember = async () => {
+    const result = await axios.put(
+      `http://localhost:8080/member/${username}`,
+      {
+        name: "박민수",
+        birthdate: "1988-11-29",
+        phone_number: `+8201071799190`,
+      },
+      {
+        headers: {
+          Authorization: `${cookies.accessToken}`,
+        },
+      }
+    );
+    console.log(result);
+  };
+
   return (
     <div className="main-wrapper">
       <h1>Welcome, {username}!</h1>
@@ -59,6 +77,11 @@ function Main() {
       <div>
         <button className="logout-btn" onClick={generateNewToken}>
           GenerateNewToken
+        </button>
+      </div>
+      <div>
+        <button className="logout-btn" onClick={updateMember}>
+          updateProfile
         </button>
       </div>
     </div>
